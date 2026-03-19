@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ascotify</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #f9fafb;
+      --bg-card: #ffffff;
+      --bg-secondary: #f3f4f6;
+      --border: rgba(0,0,0,0.1);
+      --border-md: rgba(0,0,0,0.18);
+      --text: #111827;
+      --text-muted: #6b7280;
+      --radius: 10px;
+      --radius-lg: 14px;
+      --green: #22c55e;
+      --green-dark: #16a34a;
+      --red-bg: #fee2e2;
+      --red-text: #991b1b;
+      --amber-bg: #fef9c3;
+      --amber-text: #713f12;
+      --purple: #7c3aed;
+      --purple-dark: #6d28d9;
+      --lcd-bg: #111827;
+      --lcd-cyan: #00d4ff;
+      --lcd-green: #22c55e;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #0f172a;
+        --bg-card: #1e293b;
+        --bg-secondary: #283548;
+        --border: rgba(255,255,255,0.1);
+        --border-md: rgba(255,255,255,0.2);
+        --text: #f1f5f9;
+        --text-muted: #94a3b8;
+        --red-bg: #450a0a;
+        --red-text: #fca5a5;
+        --amber-bg: #422006;
+        --amber-text: #fde68a;
+      }
+    }
+
+    body {
+      font-family: -apple-system, 'Segoe UI', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 1rem;
+    }
+
+    .wrap { max-width: 640px; margin: 0 auto; }
+
+    .logo { text-align: center; margin-bottom: 1.25rem; padding-top: 0.5rem; }
+    .logo h1 { font-size: 1.8rem; font-weight: 600; letter-spacing: -0.5px; }
+    .logo h1 span { color: var(--green); }
+    .logo p { font-size: 12px; color: var(--text-muted); margin-top: 3px; }
+
+    .mov-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 1rem; }
+    .btn-mov {
+      border: 1px solid var(--border-md);
+      background: var(--bg-card);
+      color: var(--text);
+      padding: 9px 4px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      font-size: 0.73rem;
+      font-weight: 500;
+      transition: background 0.15s, border-color 0.15s, opacity 0.15s;
+    }
+    .btn-mov:hover:not(:disabled) { background: var(--bg-secondary); }
+    .btn-mov.active { background: var(--green); color: white; border-color: var(--green-dark); }
+    .btn-mov:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 1rem;
+      margin-bottom: 0.75rem;
+    }
+
+    .transport { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 1rem; }
+    .btn-t {
+      padding: 10px 8px;
+      border-radius: var(--radius);
+      font-size: 0.8rem;
+      font-weight: 500;
+      cursor: pointer;
+      border: 1px solid var(--border-md);
+      background: var(--bg-card);
+      color: var(--text);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      transition: background 0.15s;
+    }
+    .btn-t:hover { background: var(--bg-secondary); }
+    .btn-t svg { flex-shrink: 0; }
+    .btn-play { background: var(--green) !important; color: white !important; border-color: var(--green-dark) !important; }
+    .btn-play:hover { background: var(--green-dark) !important; }
+    .btn-stop { background: var(--red-bg) !important; color: var(--red-text) !important; border-color: var(--red-text) !important; }
+
+    .lcd {
+      background: var(--lcd-bg);
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      margin-bottom: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .lcd-left { display: flex; flex-direction: column; gap: 2px; }
+    .lcd-label { font-size: 10px; color: #6b7280; text-transform: uppercase; letter-spacing: 0.06em; }
+    .lcd-bar { font-size: 2.4rem; font-weight: 600; color: var(--lcd-cyan); line-height: 1; font-family: 'Courier New', monospace; }
+    .lcd-bar input {
+      background: transparent; border: none; color: var(--lcd-cyan);
+      font-size: 2.4rem; font-weight: 600; width: 96px;
+      outline: none; font-family: 'Courier New', monospace;
+    }
+    .lcd-sub { font-size: 10px; color: var(--lcd-green); margin-top: 2px; }
+
+    .state-badge { font-size: 11px; padding: 4px 10px; border-radius: 999px; font-weight: 500; }
+    .s-stopped { background: #374151; color: #9ca3af; }
+    .s-loading  { background: #1e3a5f; color: #60a5fa; }
+    .s-playing  { background: #14532d; color: #4ade80; }
+    .s-paused   { background: #78350f; color: #fbbf24; }
+    .s-error    { background: #450a0a; color: #fca5a5; }
+
+    .range-group { margin-bottom: 0.75rem; }
+    .range-header { display: flex; justify-content: space-between; margin-bottom: 4px; }
+    .range-label { font-size: 12px; color: var(--text-muted); }
+    .range-val { font-size: 12px; font-weight: 500; }
+
+    input[type="range"] {
+      -webkit-appearance: none; appearance: none;
+      width: 100%; height: 4px; border-radius: 2px;
+      background: var(--border-md); cursor: pointer; outline: none;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--green); border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.3);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 18px; height: 18px; border-radius: 50%;
+      background: var(--green); border: 2px solid white;
+    }
+
+    .mixer-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+    .mixer-title { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.07em; }
+    .btn-tutti {
+      font-size: 11px; font-weight: 500; padding: 5px 14px;
+      border-radius: var(--radius); cursor: pointer;
+      border: 1px solid var(--border-md);
+      background: var(--bg-card); color: var(--text);
+      transition: all 0.15s;
+    }
+    .btn-tutti:hover { background: var(--bg-secondary); }
+    .btn-tutti.tutti-active { background: var(--purple); color: white; border-color: var(--purple-dark); }
+
+    .tracks-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(82px, 1fr)); gap: 6px; }
+    .track-card {
+      background: var(--bg-secondary); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 8px 6px; text-align: center;
+      transition: border-color 0.15s;
+    }
+    .track-card.active-solo { border-color: #ca8a04; }
+    .track-name {
+      font-size: 10px; font-weight: 500; color: var(--text);
+      margin-bottom: 7px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .track-btns { display: flex; gap: 4px; }
+    .btn-ms {
+      flex: 1; height: 27px; border: 1px solid var(--border-md);
+      background: var(--bg-card); color: var(--text-muted);
+      border-radius: 5px; font-size: 10px; font-weight: 600;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-ms:hover { background: var(--bg-secondary); color: var(--text); }
+    .btn-ms.muted  { background: var(--red-bg);   color: var(--red-text);   border-color: var(--red-text); }
+    .btn-ms.soloed { background: var(--amber-bg); color: var(--amber-text); border-color: #ca8a04; }
+
+    .empty-mixer { text-align: center; padding: 1.5rem 0; color: var(--text-muted); font-size: 13px; }
+    .empty-mixer svg { display: block; margin: 0 auto 8px; opacity: 0.3; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="logo">
+    <h1>Ascot<span>ify</span></h1>
+    <p>Tu gurú MIDI en casa (v. 0.3a, Juan del Pino, '26)</p>
+  </div>
+
+  <div class="mov-row">
+    <button class="btn-mov" onclick="loadMovement('i.mid', 68, this)">Mov. I</button>
+    <button class="btn-mov" onclick="loadMovement('ii.mid', 24, this)">Mov. II</button>
+    <button class="btn-mov" onclick="loadMovement('iii.mid', 52, this)">Mov. III</button>
+    <button class="btn-mov" onclick="loadMovement('iv.mid', 49, this)">Mov. IV</button>
+  </div>
+
+  <div class="card">
+    <div class="transport">
+      <button class="btn-t btn-play" onclick="doPlay()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><path d="M3 2l11 6-11 6V2z"/></svg> Play
+      </button>
+      <button class="btn-t" onclick="doPause()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="3" y="2" width="4" height="12"/><rect x="9" y="2" width="4" height="12"/></svg> Pausa
+      </button>
+      <button class="btn-t btn-stop" onclick="doStop()">
+        <svg width="13" height="13" viewBox="0 0 16 16" fill="currentColor"><rect x="2" y="2" width="12" height="12" rx="1"/></svg> Stop
+      </button>
+    </div>
+
+    <div class="lcd">
+      <div class="lcd-left">
+        <span class="lcd-label" id="lcdLabel">Compás</span>
+        <div class="lcd-bar"><input type="number" id="barInput" value="1" min="0"></div>
+        <span class="lcd-sub" id="lcdSub">—</span>
+      </div>
+      <div>
+        <span class="state-badge s-stopped" id="stateBadge">Detenido</span>
+      </div>
+    </div>
+
+    <div class="range-group">
+      <div class="range-header">
+        <span class="range-label">Posición</span>
+        <span class="range-val" id="posVal">— / —</span>
+      </div>
+      <input type="range" id="timelineSlider" min="1" max="100" value="1">
+    </div>
+
+    <div class="range-group" style="margin-bottom:0">
+      <div class="range-header">
+        <span class="range-label">Tempo</span>
+        <span class="range-val"><span id="bpmVal">120</span> BPM</span>
+      </div>
+      <input type="range" id="tempoSlider" min="40" max="220" value="120" step="1">
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="mixer-header">
+      <span class="mixer-title">Mezclador</span>
+      <button class="btn-tutti" id="btnTutti" onclick="doTutti()">Tutti</button>
+    </div>
+    <div id="tracksGrid" class="tracks-grid">
+      <div class="empty-mixer">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>
+        </svg>
+        <p>Selecciona un movimiento para comenzar</p>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script src="https://unpkg.com/tone"></script>
+<script src="https://unpkg.com/@tonejs/midi"></script>
+<script>
+  // ── Compases fijos por movimiento ─────────────────────────────────────────
+  const TOTAL_BARS = { 'i.mid': 68, 'ii.mid': 24, 'iii.mid': 52, 'iv.mid': 49 };
+  const IS_ANACRUSIS = { 'i.mid': false, 'ii.mid': false, 'iii.mid': false, 'iv.mid': true };
+  const forcedNames  = ["Bandurria","Laúd","Timple","Guitarra 1","Guitarra 2","Arpa","Contrabajo"];
+
+  let midiData       = null;
+  let synths         = [];
+  let trackElements  = [];
+  let currentFile    = "";
+  let totalBars      = 0;
+  let updateEvent    = null;
+  let soloSet        = new Set();
+  let loading        = false;
+
+  // ── Helpers UI ────────────────────────────────────────────────────────────
+  function setBadge(state, text) {
+    const el = document.getElementById("stateBadge");
+    el.className = "state-badge s-" + state;
+    el.textContent = text || { stopped:"Detenido", loading:"Cargando…", playing:"Reproduciendo", paused:"En pausa", error:"Error" }[state];
+  }
+
+  function setMovBtns(disabled) {
+    document.querySelectorAll(".btn-mov").forEach(b => b.disabled = disabled);
+  }
+
+  function updatePosLabel(bar) {
+    const label = `${bar} / ${totalBars}`;
+    document.getElementById("posVal").textContent = label;
+  }
+
+  // ── Reset ─────────────────────────────────────────────────────────────────
+  function hardReset() {
+    Tone.Transport.stop();
+    Tone.Transport.cancel();
+    Tone.Transport.ticks = 0;
+    synths.forEach(s => { try { s.dispose(); } catch(e){} });
+    synths        = [];
+    trackElements = [];
+    soloSet.clear();
+    document.getElementById("tracksGrid").innerHTML =
+      '<div class="empty-mixer"><p>Cargando…</p></div>';
+    document.getElementById("barInput").value    = IS_ANACRUSIS[currentFile] ? 0 : 1;
+    document.getElementById("timelineSlider").value = 1;
+    document.getElementById("lcdSub").textContent  = "—";
+    if (updateEvent !== null) { Tone.Transport.clear(updateEvent); updateEvent = null; }
+  }
+
+  // ── Carga desde el servidor (fetch, sin diálogo) ─────────────────────────
+  async function loadMovement(filename, bars, btn) {
+    if (loading) return;
+    loading = true;
+    setMovBtns(true);
+    setBadge("loading");
+
+    hardReset();
+    currentFile = filename;
+    totalBars   = bars;
+
+    document.querySelectorAll(".btn-mov").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+
+    // Slider configurado con compases reales
+    const slider = document.getElementById("timelineSlider");
+    slider.min = 1;
+    slider.max = totalBars;
+    slider.value = 1;
+    updatePosLabel(1);
+
+    try {
+      const response = await fetch(filename);
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const buf = await response.arrayBuffer();
+      midiData = new Midi(buf);
+
+      const bpm = Math.round(midiData.header.tempos[0]?.bpm || 120);
+      Tone.Transport.bpm.value = bpm;
+      document.getElementById("bpmVal").textContent  = bpm;
+      document.getElementById("tempoSlider").value   = bpm;
+
+      // Nombre del movimiento en el LCD
+      const movLabel = { 'i.mid':'Movimiento I','ii.mid':'Movimiento II','iii.mid':'Movimiento III','iv.mid':'Movimiento IV' };
+      document.getElementById("lcdSub").textContent = movLabel[filename] || filename;
+
+      setupPlayback();
+      setupUI();
+
+      if (updateEvent !== null) Tone.Transport.clear(updateEvent);
+      updateEvent = Tone.Transport.scheduleRepeat(() => updateBarDisplay(), "16n");
+
+      setBadge("stopped");
+    } catch(err) {
+      setBadge("error");
+      document.getElementById("tracksGrid").innerHTML =
+        `<div class="empty-mixer"><p>No se pudo cargar ${filename}.<br><small>${err.message}</small></p></div>`;
+      console.error(err);
+    }
+
+    loading = false;
+    setMovBtns(false);
+    // Restaurar el botón activo aunque se hayan re-habilitado todos
+    btn.classList.add("active");
+  }
+
+  // ── Playback ──────────────────────────────────────────────────────────────
+  function getTicksPerBar() {
+    const sig = midiData?.header.timeSignatures[0]?.timeSignature || [4, 4];
+    return (Tone.Transport.PPQ * (4 / sig[1])) * sig[0];
+  }
+
+  function getValidTracks() {
+    return midiData.tracks.filter(t =>
+      t.notes.length > 0 && !(t.name || "").toLowerCase().includes("piano")
+    );
+  }
+
+  function setupPlayback() {
+    getValidTracks().forEach(track => {
+      const synth = new Tone.PolySynth(Tone.Synth).toDestination();
+      synths.push(synth);
+      track.notes.forEach(n => {
+        Tone.Transport.schedule(time => {
+          synth.triggerAttackRelease(n.name, n.duration, time, n.velocity);
+        }, n.time);
+      });
+    });
+  }
+
+  // ── Mezclador ─────────────────────────────────────────────────────────────
+  function setupUI() {
+    const grid   = document.getElementById("tracksGrid");
+    grid.innerHTML = "";
+    soloSet.clear();
+
+    getValidTracks().forEach((track, i) => {
+      const div  = document.createElement("div");
+      div.className = "track-card";
+      div.id = `tc-${i}`;
+      const name = forcedNames[i] || track.name || `Pista ${i+1}`;
+      div.innerHTML = `
+        <div class="track-name" title="${name}">${name}</div>
+        <div class="track-btns">
+          <button class="btn-ms" id="m-${i}">M</button>
+          <button class="btn-ms" id="s-${i}">S</button>
+        </div>`;
+      grid.appendChild(div);
+
+      const mBtn = document.getElementById(`m-${i}`);
+      const sBtn = document.getElementById(`s-${i}`);
+
+      mBtn.onclick = () => {
+        const isMuted = synths[i].volume.value === -Infinity;
+        if (!isMuted) {
+          synths[i].volume.value = -Infinity;
+          mBtn.classList.add("muted");
+          if (soloSet.has(i)) {
+            soloSet.delete(i);
+            sBtn.classList.remove("soloed");
+            document.getElementById(`tc-${i}`).classList.remove("active-solo");
+            applySolo();
+          }
+        } else {
+          synths[i].volume.value = 0;
+          mBtn.classList.remove("muted");
+          applySolo();
+        }
+      };
+
+      sBtn.onclick = () => {
+        if (soloSet.has(i)) {
+          soloSet.delete(i);
+          sBtn.classList.remove("soloed");
+          document.getElementById(`tc-${i}`).classList.remove("active-solo");
+        } else {
+          soloSet.add(i);
+          sBtn.classList.add("soloed");
+          document.getElementById(`tc-${i}`).classList.add("active-solo");
+          document.getElementById(`m-${i}`).classList.remove("muted");
+        }
+        applySolo();
+      };
+
+      trackElements.push({ mBtn, sBtn, synth: synths[i] });
+    });
+
+    document.getElementById("btnTutti").classList.remove("tutti-active");
+  }
+
+  function applySolo() {
+    const hasSolo = soloSet.size > 0;
+    trackElements.forEach((el, i) => {
+      el.synth.volume.value = hasSolo
+        ? (soloSet.has(i) ? 0 : -Infinity)
+        : (el.mBtn.classList.contains("muted") ? -Infinity : 0);
+    });
+    document.getElementById("btnTutti").classList.toggle(
+      "tutti-active", trackElements.length > 0 && soloSet.size === trackElements.length
+    );
+  }
+
+  function doTutti() {
+    if (!trackElements.length) return;
+    const allActive = soloSet.size === 0 && !trackElements.some(el => el.mBtn.classList.contains("muted"));
+    soloSet.clear();
+    trackElements.forEach((el, i) => {
+      el.mBtn.classList.remove("muted");
+      el.sBtn.classList.remove("soloed");
+      document.getElementById(`tc-${i}`).classList.remove("active-solo");
+      el.synth.volume.value = 0;
+    });
+    document.getElementById("btnTutti").classList.toggle("tutti-active", !allActive);
+  }
+
+  // ── Display del compás ────────────────────────────────────────────────────
+  function updateBarDisplay() {
+    if (!midiData) return;
+    const tpb     = getTicksPerBar();
+    const realBar = Math.floor(Tone.Transport.ticks / tpb) + 1;       // 1-indexed interno
+    const isIV    = IS_ANACRUSIS[currentFile];
+    const visual  = isIV ? realBar - 1 : realBar;                      // 0 = anacrusa en Mov IV
+
+    document.getElementById("lcdLabel").textContent =
+      (isIV && visual === 0) ? "Anacrusa" : "Compás";
+    document.getElementById("barInput").value = visual;
+
+    if (Tone.Transport.state === "started") {
+      // El slider siempre va de 1..totalBars (compases reales, sin anacrusa)
+      const sliderVal = Math.min(Math.max(realBar - (isIV ? 1 : 0), 1), totalBars);
+      document.getElementById("timelineSlider").value = sliderVal;
+      updatePosLabel(sliderVal);
+    }
+  }
+
+  // ── Transporte ────────────────────────────────────────────────────────────
+  function doPlay()  { Tone.start(); Tone.Transport.start(); setBadge("playing"); }
+  function doPause() {
+    if      (Tone.Transport.state === "started") { Tone.Transport.pause(); setBadge("paused"); }
+    else if (Tone.Transport.state === "paused")  { Tone.Transport.start(); setBadge("playing"); }
+  }
+  function doStop()  {
+    Tone.Transport.stop();
+    Tone.Transport.ticks = 0;
+    updateBarDisplay();
+    setBadge("stopped");
+  }
+
+  // ── Input del compás manual ───────────────────────────────────────────────
+  document.getElementById("barInput").onchange = (e) => {
+    if (!midiData) return;
+    let v = parseInt(e.target.value);
+    if (isNaN(v)) v = IS_ANACRUSIS[currentFile] ? 0 : 1;
+    // Convertir compás visual → tick interno
+    const internalBar = IS_ANACRUSIS[currentFile] ? v + 1 : v;
+    Tone.Transport.ticks = Math.max(0, (internalBar - 1)) * getTicksPerBar();
+    updateBarDisplay();
+    const sliderVal = Math.min(Math.max(v < 1 ? 1 : v, 1), totalBars);
+    document.getElementById("timelineSlider").value = sliderVal;
+    updatePosLabel(sliderVal);
+  };
+
+  // ── Slider de posición (1..totalBars) ────────────────────────────────────
+  document.getElementById("timelineSlider").oninput = (e) => {
+    if (!midiData) return;
+    const v = parseInt(e.target.value);        // compás real 1..N
+    const isIV = IS_ANACRUSIS[currentFile];
+    // En Mov IV el compás 1 del slider = compás interno 2 (compás 1 visual)
+    // slider=1 → interno=2 → visual=1
+    const internalBar = isIV ? v + 1 : v;
+    Tone.Transport.ticks = (internalBar - 1) * getTicksPerBar();
+    updatePosLabel(v);
+    updateBarDisplay();
+  };
+
+  // ── Tempo ─────────────────────────────────────────────────────────────────
+  document.getElementById("tempoSlider").oninput = (e) => {
+    Tone.Transport.bpm.value = parseInt(e.target.value);
+    document.getElementById("bpmVal").textContent = e.target.value;
+  };
+</script>
+</body>
+</html>
