@@ -190,6 +190,16 @@
 
     .empty-mixer { text-align: center; padding: 1.5rem 0; color: var(--text-muted); font-size: 13px; }
     .empty-mixer svg { display: block; margin: 0 auto 8px; opacity: 0.3; }
+  /* Quitar flechitas de input number */
+#barInput::-webkit-outer-spin-button,
+#barInput::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+#barInput[type=number] {
+  -moz-appearance: textfield;
+}
   </style>
 </head>
 <body>
