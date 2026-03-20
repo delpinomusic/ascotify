@@ -490,7 +490,7 @@
 
     document.getElementById("lcdLabel").textContent =
       (isIV && visual === 0) ? "Anacrusa" : "Compás";
-    document.getElementById("barInput").value = visual;
+    document.getElementById("barInput").value = Math.min(visual, totalBars);
 
     if (Tone.Transport.state === "started") {
       // El slider siempre va de 1..totalBars (compases reales, sin anacrusa)
